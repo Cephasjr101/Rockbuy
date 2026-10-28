@@ -1,4 +1,4 @@
-# fly.toml app configuration file generated for rockbuy on 2026-10-28T15:15:11Z
+# fly.toml app configuration file generated for rockbuy on 2026-10-28T15:24:42Z
 #
 # See https://docs.fly.io/reference/configuration for information about how to use this file.
 #
@@ -10,7 +10,7 @@ primary_region = 'ams'
   auto_start_machines = true
   auto_stop_machines = 'stop'
   force_https = true
-  internal_port = 8000
+  internal_port = 8080
   min_machines_running = 0
   processes = ['app']
 
