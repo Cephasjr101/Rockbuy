@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Shop admin</title>
+<style>
+body{font:15px/1.5 system-ui,sans-serif;margin:0;padding:16px;background:#f6f7f9;color:#14213d}
+.box{background:#fff;border:1px solid #d9dde5;border-radius:10px;padding:14px;margin-bottom:16px;max-width:900px}
+input,select,button{font:inherit;padding:8px;border-radius:6px;border:1px solid #d9dde5}
+button{background:#14213d;color:#fff;cursor:pointer}
+.o{border-top:1px solid #d9dde5;padding:10px 0}
+</style></head><body>
+<div class="box"><b>Admin token</b> <input id="tok" type="password"> <button id="go">Sign in</button></div>
+<div class="box"><b>Import products from supplier</b><br>
+  <input id="q" placeholder="Search keyword"> <button id="imp">Import</button> <span id="msg"></span></div>
+<div class="box"><b>Orders</b><div id="orders">Sign in to see orders.</div></div>
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const H=()=>({'Content-Type':'application/json','x-admin-token':sessionStorage.getItem('tok')||''});
+$('go').onclick=()=>{sessionStorage.setItem('tok',$('tok').value);load()};
+$('imp').onclick=async()=>{
+  const r=await fetch('/api/admin/import',{method:'POST',headers:H(),body:JSON.stringify({q:$('q').value})});
+  const j=await r.json();$('msg').textContent=j.error||`Imported ${j.imported} products`;
+};
+async function load(){
+  const r=await fetch('/api/admin/orders',{headers:H()});
+  if(!r.ok){$('orders').textContent='Wrong token.';return}
+  const j=await r.json();
+  $('orders').innerHTML=j.orders.length?j.orders.map(o=>`<div class="o">
+    <b>${esc(o.ref)}</b> &middot; ${j.currency} ${o.total.toLocaleString()} &middot; ${esc(o.created)}<br>
+    ${esc(o.name)}, ${esc(o.phone)}<br>${esc(o.address)}, ${esc(o.city)}<br>
+    ${o.items.map(i=>`${i.qty} x ${esc(i.title)}`).join('; ')}<br>
+    <select data-ref="${esc(o.ref)}">${j.statuses.map(s=>`<option ${s===o.status?'selected':''}>${s}</option>`).join('')}</select>
+  </div>`).join(''):'No orders yet.';
+}
+document.addEventListener('change',async e=>{
+  if(e.target.dataset.ref)await fetch(`/api/admin/orders/${e.target.dataset.ref}/status`,{method:'POST',headers:H(),body:JSON.stringify({status:e.target.value})});
+});
+if(sessionStorage.getItem('tok'))load();
+</script></body></html>
